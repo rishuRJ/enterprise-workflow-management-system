@@ -1,5 +1,7 @@
 package com.rishu.workflow.controller;
 
+import com.rishu.workflow.dto.LoginRequest;
+import com.rishu.workflow.dto.LoginResponse;
 import com.rishu.workflow.dto.RegisterRequest;
 import com.rishu.workflow.entity.User;
 import com.rishu.workflow.service.AuthService;
@@ -17,5 +19,10 @@ public class AuthController {
     @PostMapping("/register")
     public User register(@Valid @RequestBody RegisterRequest request) {
         return authService.register(request);
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }
