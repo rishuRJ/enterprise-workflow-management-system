@@ -19,4 +19,13 @@ public class TestJwtController {
     public String token() {
         return jwtService.generateToken("rishu@gmail.com");
     }
+
+    @GetMapping("/email")
+    public String email() {
+
+        String token =
+                jwtService.generateToken("rishu@gmail.com");
+
+        return jwtService.extractEmail(token);
+    }
 }
