@@ -2,12 +2,12 @@ package com.rishu.workflow.service;
 
 import com.rishu.workflow.dto.CreateRequestDto;
 import com.rishu.workflow.entity.Request;
+import com.rishu.workflow.exception.ResourceNotFoundException;
 
 import java.util.List;
 
 public interface RequestService {
-    Request createRequest(
-            CreateRequestDto requestDto);
+    Request createRequest(CreateRequestDto requestDto);
 
     List<Request> getAllRequest();
 
@@ -16,4 +16,8 @@ public interface RequestService {
     Request approveRequest(Long id);
 
     Request rejectRequest(Long id);
+
+    List<Request> getMyRequests();
+
+    List<Request> getManagerRequests();
 }

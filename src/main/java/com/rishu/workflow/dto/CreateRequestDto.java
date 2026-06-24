@@ -9,7 +9,7 @@ public class CreateRequestDto {
 
     private String description;
 
-    private Long employeeId;
+//    private Long employeeId;
 
     private Long managerId;
 }

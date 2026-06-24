@@ -5,6 +5,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -15,6 +18,8 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final CustomUserDetailsService
+            userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -25,6 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         System.out.println("JWT FILTER EXECUTED");
 
+//        System.out.println(
+//                "Authorization Header = " +
+//                        request.getHeader("Authorization"));
         String authHeader =
                 request.getHeader("Authorization");
 
@@ -43,8 +51,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email =
                     jwtService.extractEmail(token);
 
-            System.out.println(
-                    "Authenticated User: " + email);
+            UserDetails userDetails =
+                    userDetailsService
+                            .loadUserByUsername(email);
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
+            SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authToken);
+
         }
 
         filterChain.doFilter(request, response);

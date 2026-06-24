@@ -4,9 +4,7 @@ import com.rishu.workflow.dto.CreateRequestDto;
 import com.rishu.workflow.entity.Request;
 import com.rishu.workflow.service.RequestService;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,13 +12,23 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/request")
+@RequestMapping("/requests")
 public class RequestController {
     private final RequestService requestService;
 
     @PostMapping
     public Request request(@Valid @RequestBody CreateRequestDto dto) {
         return requestService.createRequest(dto);
+    }
+
+    @GetMapping("/manager")
+    public List<Request> getManagerRequests() {
+        return requestService.getManagerRequests();
+    }
+
+    @GetMapping("/my")
+    public List<Request> getMyRequests(){
+        return requestService.getMyRequests();
     }
 
     @GetMapping

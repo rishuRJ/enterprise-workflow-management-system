@@ -26,8 +26,11 @@ public class Request {
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
+//    @ManyToOne
+    //@JoinColumn(name ="employee_id")
     private Long employeeId;
 
+//    @ManyToOne
     private Long managerId;
 
     private LocalDateTime createdAt;
