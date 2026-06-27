@@ -18,7 +18,7 @@ public class RequestController {
     private final RequestService requestService;
 
     @PostMapping
-    public Request RequestResponseDto(@Valid @RequestBody CreateRequestDto dto) {
+    public RequestResponseDto createRequest(@Valid @RequestBody CreateRequestDto dto) {
         return requestService.createRequest(dto);
     }
 
