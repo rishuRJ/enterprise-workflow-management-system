@@ -1,5 +1,6 @@
 package com.rishu.workflow.dto;
 
+import com.rishu.workflow.entity.User;
 import com.rishu.workflow.enums.RequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,9 +22,9 @@ public class RequestResponseDto {
 
     private String description;
 
-    private Long employeeId;
+    private UserSummaryDto employee;
 
-    private Long managerId;
+    private UserSummaryDto manager;
 
     private RequestStatus status;
 

@@ -2,11 +2,15 @@ package com.rishu.workflow.controller;
 
 import com.rishu.workflow.dto.CreateRequestDto;
 import com.rishu.workflow.dto.RequestResponseDto;
-import com.rishu.workflow.entity.Request;
+import com.rishu.workflow.dto.RequestSearchDto;
 import com.rishu.workflow.service.RequestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -23,13 +27,27 @@ public class RequestController {
     }
 
     @GetMapping("/manager")
-    public List<RequestResponseDto> getManagerRequests() {
-        return requestService.getManagerRequests();
+    public Page<RequestResponseDto> getManagerRequests(RequestSearchDto searchDto,
+                                                       @PageableDefault(
+                                                               page = 0,
+                                                               size = 20,
+                                                               sort = "createdAt",
+                                                               direction = Sort.Direction.DESC
+                                                       )
+                                                       Pageable pageable) {
+        return requestService.getManagerRequests(searchDto, pageable);
     }
 
     @GetMapping("/my")
-    public List<RequestResponseDto> getMyRequests(){
-        return requestService.getMyRequests();
+    Page<RequestResponseDto> getMyRequests(RequestSearchDto searchDto,
+                                           @PageableDefault(
+                                                   page = 0,
+                                                   size = 20,
+                                                   sort = "createdAt",
+                                                   direction = Sort.Direction.DESC
+                                           )
+                                           Pageable pageable) {
+        return requestService.getMyRequests(searchDto, pageable);
     }
 
     @GetMapping
