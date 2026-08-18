@@ -35,6 +35,7 @@ public class RequestServiceImpl implements RequestService {
     private final CurrentUserService currentUserService;
     private final RequestMapper requestMapper;
     private final UserRepository userRepository;
+    private final RequestHistoryService requestHistoryService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -117,9 +118,12 @@ public class RequestServiceImpl implements RequestService {
         Request request =
                 validateManagerAndRequest(id, currentUser);
 
+        RequestStatus previousStatus = request.getStatus();
+
         request.setStatus(RequestStatus.APPROVED);
         request.setUpdatedAt(LocalDateTime.now());
 
+        requestHistoryService.saveRequestHistory(request,currentUser,"REQUEST_APPROVED", previousStatus);
 //        Request savedRequest = requestRepository.save(request);
         return requestMapper.toDto(request);
     }
@@ -132,9 +136,12 @@ public class RequestServiceImpl implements RequestService {
         Request request =
                 validateManagerAndRequest(id, currentUser);
 
+        RequestStatus previousStatus = request.getStatus();
 
         request.setStatus(RequestStatus.REJECTED);
         request.setUpdatedAt(LocalDateTime.now());
+
+        requestHistoryService.saveRequestHistory(request,currentUser,"REQUEST_REJECTED", previousStatus);
 
 //        Request savedRequest = requestRepository.save(request);
         return requestMapper.toDto(request);
