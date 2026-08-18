@@ -2,8 +2,14 @@ package com.rishu.workflow.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -21,21 +27,78 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> handleRuntimeException(
-            RuntimeException ex) {
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<?> handleOptimisticLockingFailure(
+            ObjectOptimisticLockingFailureException ex) {
 
         return ResponseEntity
-                .badRequest()
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                        "message",
+                        "Request was modified by another user. Please refresh and try again."
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleException(
+            Exception ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of(
                         "message",
                         ex.getMessage()
                 ));
     }
 
-    public ResponseEntity<?> handleException(BusinessException ex) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleBusinessException(
+            BusinessException ex){
+
         return ResponseEntity
                 .badRequest()
                 .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<?> handleDuplicateResource(
+            DuplicateResourceException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<?> handleInvalidCredentials(
+            InvalidCredentialsException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(
+            AccessDeniedException ex){
+        System.out.println("GLOBAL ACCESS DENIED HANDLER CALLED");
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException ex){
+        List<FieldError> fieldErrors = ex.getBindingResult().getFieldErrors();
+        Map<String,String> errors = new HashMap<>();
+        for(FieldError fieldError : fieldErrors){
+            errors.put(fieldError.getField(),fieldError.getDefaultMessage());
+        }
+
+        return  ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("errors", errors));
     }
 }

@@ -28,9 +28,7 @@ public class CustomUserDetailsService
                 .builder()
                 .username(user.getEmail())
                 .password(user.getPassword())
-                .authorities(
-                        "ROLE_" +
-                                user.getRole().name())
+                .authorities(user.getRole().name())
                 .build();
     }
 }

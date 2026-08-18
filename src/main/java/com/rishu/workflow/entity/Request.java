@@ -19,6 +19,9 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private Long version;
+
     private String title;
 
     private String description;
@@ -26,12 +29,14 @@ public class Request {
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
-//    @ManyToOne
-    //@JoinColumn(name ="employee_id")
-    private Long employeeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name ="employee_id")
+    private User employee;
 
-//    @ManyToOne
-    private Long managerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name  = "manager_id")
+    private User manager;
 
     private LocalDateTime createdAt;
 

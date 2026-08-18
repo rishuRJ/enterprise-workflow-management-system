@@ -3,10 +3,16 @@ package com.rishu.workflow.service;
 import com.rishu.workflow.dto.LoginRequest;
 import com.rishu.workflow.dto.LoginResponse;
 import com.rishu.workflow.dto.RegisterRequest;
+import com.rishu.workflow.dto.UserResponseDto;
 import com.rishu.workflow.entity.User;
+import com.rishu.workflow.exception.DuplicateResourceException;
+import com.rishu.workflow.mapper.UserMapper;
 import com.rishu.workflow.repository.UserRepository;
 import com.rishu.workflow.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +25,15 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private  final UserMapper userMapper;
+    private final AuthenticationManager authenticationManager;
 
     @Override
-    public User register(RegisterRequest request) {
+    public UserResponseDto register(RegisterRequest request) {
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new DuplicateResourceException("An account already exists for this email");
+        }
 
         User user = User.builder()
                 .name(request.getName())
@@ -31,26 +43,18 @@ public class AuthServiceImpl implements AuthService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return userMapper.toDto(savedUser);
     }
 
     @Override
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
-        boolean validPassword =
-                passwordEncoder.matches(
-                        request.getPassword(),
-                        user.getPassword());
-
-        if (!validPassword) {
-            throw new RuntimeException("Invalid credentials");
-        }
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
+        Authentication authentication =  authenticationManager.authenticate(authenticationToken);
 
         String token =
-                jwtService.generateToken(user.getEmail());
+                jwtService.generateToken(authentication.getName());
 
         return new LoginResponse(token);
     }
