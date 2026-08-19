@@ -8,7 +8,8 @@ import com.rishu.workflow.repository.RequestHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -28,5 +29,9 @@ public class RequestHistoryService {
         .build();
 
         requestHistoryRepository.save(requestHistory);
+    }
+
+    public List<RequestHistory> getHistory(Request request){
+        return requestHistoryRepository.findByRequestOrderByOccurredAtAsc(request);
     }
 }
