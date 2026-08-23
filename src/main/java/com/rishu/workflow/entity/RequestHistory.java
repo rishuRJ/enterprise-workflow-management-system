@@ -30,6 +30,7 @@ public class RequestHistory {
     @JoinColumn(name = "actor_id")
     private User actor;
 
+    @Enumerated(EnumType.STRING)
     private Action action;
 
     @Enumerated(EnumType.STRING)

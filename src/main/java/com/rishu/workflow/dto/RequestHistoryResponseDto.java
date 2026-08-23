@@ -1,6 +1,7 @@
 package com.rishu.workflow.dto;
 
 
+import com.rishu.workflow.enums.Action;
 import com.rishu.workflow.enums.RequestStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +17,7 @@ public class RequestHistoryResponseDto {
 
     private UserSummaryDto actor;
 
-    private String action;
+    private Action action;
 
     private RequestStatus previousStatus;
 
