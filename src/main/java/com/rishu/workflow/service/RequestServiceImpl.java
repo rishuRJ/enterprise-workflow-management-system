@@ -40,6 +40,7 @@ public class RequestServiceImpl implements RequestService {
     private final UserRepository userRepository;
     private final RequestHistoryService requestHistoryService;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxService outboxService;
 
 
 
@@ -74,10 +75,13 @@ public class RequestServiceImpl implements RequestService {
 
         requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_SUBMITTED, null);
 
-        eventPublisher.publishEvent(RequestLifecycleEvent.from(request,Action.REQUEST_SUBMITTED,currentUser));
+        RequestLifecycleEvent event = RequestLifecycleEvent.from(request,Action.REQUEST_SUBMITTED,currentUser);
+
+        eventPublisher.publishEvent(event);
+
+        outboxService.save(event);
 
         return requestMapper.toDto(savedRequest);    }
-
 
     @Override
     @Transactional
@@ -97,11 +101,15 @@ public class RequestServiceImpl implements RequestService {
 
         requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_APPROVED, previousStatus);
 
-        eventPublisher.publishEvent(RequestLifecycleEvent.from(request,Action.REQUEST_APPROVED,currentUser));
+        RequestLifecycleEvent event = RequestLifecycleEvent.from(request,Action.REQUEST_APPROVED,currentUser);
 
+        eventPublisher.publishEvent(event);
+
+        outboxService.save(event);
 
         return requestMapper.toDto(savedRequest);
     }
+
     @Override
     @Transactional
     @PreAuthorize("hasRole('MANAGER')")
@@ -120,11 +128,14 @@ public class RequestServiceImpl implements RequestService {
 
         requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_REJECTED, previousStatus);
 
-        eventPublisher.publishEvent(RequestLifecycleEvent.from(request,Action.REQUEST_REJECTED,currentUser));
+        RequestLifecycleEvent event = RequestLifecycleEvent.from(request,Action.REQUEST_REJECTED,currentUser);
+
+        eventPublisher.publishEvent(event);
+
+        outboxService.save(event);
 
         return requestMapper.toDto(savedRequest);
     }
-
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -176,7 +187,6 @@ public class RequestServiceImpl implements RequestService {
                 .toList();
     }
 
-
     @Override
     public Page<RequestResponseDto> getMyRequests(RequestSearchDto searchDto, Pageable pageable)  {
 
@@ -214,6 +224,8 @@ public class RequestServiceImpl implements RequestService {
 
         return  requests.map(requestMapper::toDto);
     }
+
+
 
     private void validateRequestAccess(Request request, User user) {
         if(user.getRole() == Role.ROLE_ADMIN) {
