@@ -1,10 +1,9 @@
 package com.rishu.workflow.service;
 
 import com.rishu.workflow.dto.CreateRequestDto;
+import com.rishu.workflow.dto.RequestHistoryResponseDto;
 import com.rishu.workflow.dto.RequestResponseDto;
 import com.rishu.workflow.dto.RequestSearchDto;
-import com.rishu.workflow.entity.Request;
-import com.rishu.workflow.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,6 +15,8 @@ public interface RequestService {
     List<RequestResponseDto> getAllRequest();
 
     RequestResponseDto getRequestById(Long id);
+
+    List<RequestHistoryResponseDto> getRequestHistory(Long id);
 
     RequestResponseDto approveRequest(Long id);
 

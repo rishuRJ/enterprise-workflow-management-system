@@ -1,6 +1,7 @@
 package com.rishu.workflow.controller;
 
 import com.rishu.workflow.dto.CreateRequestDto;
+import com.rishu.workflow.dto.RequestHistoryResponseDto;
 import com.rishu.workflow.dto.RequestResponseDto;
 import com.rishu.workflow.dto.RequestSearchDto;
 import com.rishu.workflow.service.RequestService;
@@ -58,6 +59,11 @@ public class RequestController {
     @GetMapping("/{id}")
     public RequestResponseDto getRequest(@PathVariable Long id) {
         return requestService.getRequestById(id);
+    }
+
+    @GetMapping("/{id}/history")
+    public List<RequestHistoryResponseDto> getRequestHistory(@PathVariable Long id) {
+        return requestService.getRequestHistory(id);
     }
 
     @PutMapping("/{id}/approve")
