@@ -3,6 +3,7 @@ package com.rishu.workflow.service;
 import com.rishu.workflow.entity.Request;
 import com.rishu.workflow.entity.RequestHistory;
 import com.rishu.workflow.entity.User;
+import com.rishu.workflow.enums.Action;
 import com.rishu.workflow.enums.RequestStatus;
 import com.rishu.workflow.repository.RequestHistoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class RequestHistoryService {
 
     private final RequestHistoryRepository requestHistoryRepository;
 
-    public void saveRequestHistory(Request request, User actor,String action, RequestStatus previousStatus) {
+    public void saveRequestHistory(Request request, User actor, Action action, RequestStatus previousStatus) {
 
         RequestHistory requestHistory = RequestHistory.builder()
                 .action(action)

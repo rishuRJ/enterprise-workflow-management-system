@@ -1,6 +1,7 @@
 package com.rishu.workflow.entity;
 
 
+import com.rishu.workflow.enums.Action;
 import com.rishu.workflow.enums.RequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,7 +30,7 @@ public class RequestHistory {
     @JoinColumn(name = "actor_id")
     private User actor;
 
-    private String action;
+    private Action action;
 
     @Enumerated(EnumType.STRING)
     private RequestStatus previousStatus;

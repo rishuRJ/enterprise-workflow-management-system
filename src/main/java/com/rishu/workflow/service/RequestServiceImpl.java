@@ -8,6 +8,8 @@ import com.rishu.workflow.entity.Request;
 import com.rishu.workflow.entity.User;
 import com.rishu.workflow.enums.RequestStatus;
 import com.rishu.workflow.enums.Role;
+import com.rishu.workflow.enums.Action;
+import com.rishu.workflow.event.RequestLifecycleEvent;
 import com.rishu.workflow.exception.BusinessException;
 import com.rishu.workflow.exception.ResourceNotFoundException;
 import com.rishu.workflow.mapper.RequestMapper;
@@ -15,6 +17,7 @@ import com.rishu.workflow.repository.RequestRepository;
 import com.rishu.workflow.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,15 +39,17 @@ public class RequestServiceImpl implements RequestService {
     private final RequestMapper requestMapper;
     private final UserRepository userRepository;
     private final RequestHistoryService requestHistoryService;
+    private final ApplicationEventPublisher eventPublisher;
+
 
 
     @Override
     @Transactional
     public RequestResponseDto createRequest(CreateRequestDto dto) {
 
-        User user = currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        if (user.getRole() == Role.ROLE_ADMIN) {
+        if (currentUser.getRole() == Role.ROLE_ADMIN) {
             throw new AccessDeniedException("Administrators cannot create requests");
         }
 
@@ -58,17 +63,68 @@ public class RequestServiceImpl implements RequestService {
         Request request = Request.builder()
                 .title(dto.getTitle())
                 .description(dto.getDescription())
-                .employee(user)
+                .employee(currentUser)
                 .manager(manager)
                 .status(RequestStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        requestHistoryService.saveRequestHistory(request,user,"REQUEST_SUBMITTED", null);
+        Request savedRequest = requestRepository.save(request);
 
-        return requestMapper.toDto(request);
+        requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_SUBMITTED, null);
+
+        eventPublisher.publishEvent(RequestLifecycleEvent.from(request,Action.REQUEST_SUBMITTED,currentUser));
+
+        return requestMapper.toDto(savedRequest);    }
+
+
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('MANAGER')")
+    public RequestResponseDto approveRequest(Long id) {
+
+        User currentUser = currentUserService.getCurrentUser();
+        Request request =
+                validateManagerAndRequest(id, currentUser);
+
+        RequestStatus previousStatus = request.getStatus();
+
+        request.setStatus(RequestStatus.APPROVED);
+        request.setUpdatedAt(LocalDateTime.now());
+
+        Request savedRequest = requestRepository.save(request);
+
+        requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_APPROVED, previousStatus);
+
+        eventPublisher.publishEvent(RequestLifecycleEvent.from(request,Action.REQUEST_APPROVED,currentUser));
+
+
+        return requestMapper.toDto(savedRequest);
     }
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('MANAGER')")
+    public RequestResponseDto rejectRequest(Long id) {
+
+        User currentUser = currentUserService.getCurrentUser();
+        Request request =
+                validateManagerAndRequest(id, currentUser);
+
+        RequestStatus previousStatus = request.getStatus();
+
+        request.setStatus(RequestStatus.REJECTED);
+        request.setUpdatedAt(LocalDateTime.now());
+
+        Request savedRequest = requestRepository.save(request);
+
+        requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_REJECTED, previousStatus);
+
+        eventPublisher.publishEvent(RequestLifecycleEvent.from(request,Action.REQUEST_REJECTED,currentUser));
+
+        return requestMapper.toDto(savedRequest);
+    }
+
 
     @Override
     @PreAuthorize("hasRole('ADMIN')")
@@ -105,14 +161,14 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    @Transactional
     public List<RequestHistoryResponseDto> getRequestHistory(Long id){
         User user = currentUserService.getCurrentUser();
 
         Request request = requestRepository.findById(id)
                 .orElseThrow(() ->
-                new ResourceNotFoundException("Request not found"));
+                        new ResourceNotFoundException("Request not found"));
         validateRequestAccess(request, user);
+
 
         return requestHistoryService.getHistory(request)
                 .stream()
@@ -120,43 +176,6 @@ public class RequestServiceImpl implements RequestService {
                 .toList();
     }
 
-    @Override
-    @Transactional
-    @PreAuthorize("hasRole('MANAGER')")
-    public RequestResponseDto approveRequest(Long id) {
-
-        User currentUser = currentUserService.getCurrentUser();
-        Request request =
-                validateManagerAndRequest(id, currentUser);
-
-        RequestStatus previousStatus = request.getStatus();
-
-        request.setStatus(RequestStatus.APPROVED);
-        request.setUpdatedAt(LocalDateTime.now());
-
-        requestHistoryService.saveRequestHistory(request,currentUser,"REQUEST_APPROVED", previousStatus);
-//        Request savedRequest = requestRepository.save(request);
-        return requestMapper.toDto(request);
-    }
-    @Override
-    @Transactional
-    @PreAuthorize("hasRole('MANAGER')")
-    public RequestResponseDto rejectRequest(Long id) {
-
-        User currentUser = currentUserService.getCurrentUser();
-        Request request =
-                validateManagerAndRequest(id, currentUser);
-
-        RequestStatus previousStatus = request.getStatus();
-
-        request.setStatus(RequestStatus.REJECTED);
-        request.setUpdatedAt(LocalDateTime.now());
-
-        requestHistoryService.saveRequestHistory(request,currentUser,"REQUEST_REJECTED", previousStatus);
-
-//        Request savedRequest = requestRepository.save(request);
-        return requestMapper.toDto(request);
-    }
 
     @Override
     public Page<RequestResponseDto> getMyRequests(RequestSearchDto searchDto, Pageable pageable)  {
