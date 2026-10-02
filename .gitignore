@@ -4,6 +4,9 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+IMPLEMENTATION_PLAN.md
+mvnw.cmd
+Rishu_Raj_SHIELD_Resume.tex
 
 ### STS ###
 .apt_generated

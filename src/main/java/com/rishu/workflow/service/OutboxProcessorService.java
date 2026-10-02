@@ -7,8 +7,10 @@ import com.rishu.workflow.enums.OutboxEventStatus;
 import com.rishu.workflow.event.RequestLifecycleEvent;
 import com.rishu.workflow.exception.BusinessException;
 import com.rishu.workflow.exception.ResourceNotFoundException;
+import com.rishu.workflow.kafka.RequestLifecycleKafkaProducer;
 import com.rishu.workflow.mapper.OutboxEventMapper;
 import com.rishu.workflow.repository.OutboxEventRepository;
+import com.rishu.workflow.util.AppConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +24,7 @@ public class OutboxProcessorService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
-    private final NotificationService notificationService;
+    private final RequestLifecycleKafkaProducer kafkaProducer;
     private final OutboxEventMapper outboxEventMapper;
 
     @Transactional
@@ -45,7 +47,7 @@ public class OutboxProcessorService {
                 RequestLifecycleEvent lifecycleEvent = objectMapper
                         .readValue(event.getPayload(),RequestLifecycleEvent.class);
 
-                notificationService.sendNotification(lifecycleEvent);
+                kafkaProducer.publish(lifecycleEvent);
 
                 event.setStatus(OutboxEventStatus.PROCESSED);
                 event.setProcessedAt(LocalDateTime.now());
@@ -59,7 +61,7 @@ public class OutboxProcessorService {
             event.setRetryCount(retryCount);
             event.setLastError(e.getMessage());
 
-            if (retryCount > 3) {
+            if (retryCount > AppConstants.MAX_RETRY_COUNT) {
                 event.setStatus(OutboxEventStatus.PERMANENTLY_FAILED);
                 event.setNextRetryAt(null);
             } else {
@@ -71,6 +73,8 @@ public class OutboxProcessorService {
         }
     }
 
+
+    @Transactional
     public void recoverStaleEvents() {
         List<OutboxEvent> events = outboxEventRepository.findStaleEvents(10);
 
@@ -83,7 +87,7 @@ public class OutboxProcessorService {
             );
             event.setProcessingStartedAt(null);
 
-            if (retryCount > 3) {
+            if (retryCount > AppConstants.MAX_RETRY_COUNT) {
                 event.setStatus(
                         OutboxEventStatus.PERMANENTLY_FAILED
                 );
@@ -130,8 +134,8 @@ public class OutboxProcessorService {
 
         return switch (retryCount){
             case 1 -> LocalDateTime.now().plusMinutes(1);
-            case 2 -> LocalDateTime.now().minusMinutes(5);
-            case 3 -> LocalDateTime.now().minusMinutes(15);
+            case 2 -> LocalDateTime.now().plusMinutes(5);
+            case 3 -> LocalDateTime.now().plusMinutes(15);
             default -> null;
         };
     }
