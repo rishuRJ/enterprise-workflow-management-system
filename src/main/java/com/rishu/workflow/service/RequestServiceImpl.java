@@ -17,7 +17,6 @@ import com.rishu.workflow.repository.RequestRepository;
 import com.rishu.workflow.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -39,7 +38,6 @@ public class RequestServiceImpl implements RequestService {
     private final RequestMapper requestMapper;
     private final UserRepository userRepository;
     private final RequestHistoryService requestHistoryService;
-    private final ApplicationEventPublisher eventPublisher;
     private final OutboxService outboxService;
 
 
@@ -77,8 +75,6 @@ public class RequestServiceImpl implements RequestService {
 
         RequestLifecycleEvent event = RequestLifecycleEvent.from(request,Action.REQUEST_SUBMITTED,currentUser);
 
-        eventPublisher.publishEvent(event);
-
         outboxService.save(event);
 
         return requestMapper.toDto(savedRequest);    }
@@ -102,8 +98,6 @@ public class RequestServiceImpl implements RequestService {
         requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_APPROVED, previousStatus);
 
         RequestLifecycleEvent event = RequestLifecycleEvent.from(request,Action.REQUEST_APPROVED,currentUser);
-
-        eventPublisher.publishEvent(event);
 
         outboxService.save(event);
 
@@ -129,8 +123,6 @@ public class RequestServiceImpl implements RequestService {
         requestHistoryService.saveRequestHistory(request,currentUser,Action.REQUEST_REJECTED, previousStatus);
 
         RequestLifecycleEvent event = RequestLifecycleEvent.from(request,Action.REQUEST_REJECTED,currentUser);
-
-        eventPublisher.publishEvent(event);
 
         outboxService.save(event);
 
