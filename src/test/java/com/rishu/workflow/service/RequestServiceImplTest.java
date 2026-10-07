@@ -1,9 +1,11 @@
 package com.rishu.workflow.service;
 
 import com.rishu.workflow.dto.CreateRequestDto;
+import com.rishu.workflow.dto.RequestHistoryResponseDto;
 import com.rishu.workflow.dto.RequestResponseDto;
 import com.rishu.workflow.dto.UserSummaryDto;
 import com.rishu.workflow.entity.Request;
+import com.rishu.workflow.entity.RequestHistory;
 import com.rishu.workflow.entity.User;
 import com.rishu.workflow.enums.Action;
 import com.rishu.workflow.enums.RequestStatus;
@@ -17,13 +19,18 @@ import com.rishu.workflow.repository.UserRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -339,6 +346,73 @@ class RequestServiceImplTest {
 
         }
 
+    }
+
+    @Nested
+    class GetAllRequest{
+
+        @Test
+        void noRequestInDb(){
+            when(requestRepository.findAll()).thenReturn(List.of());
+
+            requestService.getAllRequest();
+            assertThat(requestService.getAllRequest()).isEmpty();
+        }
+
+        @Test
+        void returnListOfDtos(){
+            Request request1 = Request.builder().id(1L).employee(employee()).build();
+            Request request2 = Request.builder().id(2L).employee(employee()).build();
+            RequestResponseDto dto1 = RequestResponseDto.builder().id(1L).build();
+            RequestResponseDto dto2 = RequestResponseDto.builder().id(2L).build();
+            when(requestRepository.findAll()).thenReturn(List.of(request1,request2));
+            when(requestMapper.toDto(request1)).thenReturn(dto1);
+            when(requestMapper.toDto(request2)).thenReturn(dto2);
+            List<RequestResponseDto> result = requestService.getAllRequest();
+
+
+            assertThat(result).containsExactly(dto1, dto2);
+        }
+    }
+
+    @Nested
+    class GetRequestHistory{
+
+        @Test
+        void throwsWhenInvalidRequestId(){
+            User employee = employee();
+            when(currentUserService.getCurrentUser()).thenReturn(employee);
+            when(requestRepository.findById(1L)).thenReturn(Optional.empty());
+            assertThatThrownBy(() -> requestService.getRequestHistory(1L)).isInstanceOf(ResourceNotFoundException.class);
+            verifyNoInteractions(requestHistoryService);
+        }
+
+        @Test
+        void authorizedUserCanAccessGetRequestHistoryMethod(){
+            User employee = employee();
+            when(currentUserService.getCurrentUser()).thenReturn(employee);
+            Request request = Request.builder().id(1L).employee(employee).build();
+            when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+            RequestHistory requestHistory1 = RequestHistory.builder().id(1L).request(request).build();
+            RequestHistory requestHistory2 = RequestHistory.builder().id(2L).request(request).build();
+            RequestHistoryResponseDto dto1 = RequestHistoryResponseDto.builder().action(Action.REQUEST_SUBMITTED).build();
+            RequestHistoryResponseDto dto2 = RequestHistoryResponseDto.builder().action(Action.REQUEST_APPROVED).build();
+            when(requestHistoryService.getHistory(request)).thenReturn(List.of(requestHistory1,requestHistory2));
+            when(requestMapper.toHistoryDto(requestHistory1)).thenReturn(dto1);
+            when(requestMapper.toHistoryDto(requestHistory2)).thenReturn(dto2);
+            List<RequestHistoryResponseDto> result = requestService.getRequestHistory(1L);
+            assertThat(result).containsExactly(dto1, dto2);
+        }
+
+        @Test
+        void throwsWhenUnauthorizedUserTryingToGetRequestHistoryMethod(){
+            when(currentUserService.getCurrentUser()).thenReturn(User.builder().id(99L).build());
+            when(requestRepository.findById(1L)).thenReturn(Optional.of(Request.builder().id(1L).employee(employee()).manager(manager()).build()));
+
+            assertThatThrownBy(() -> requestService.getRequestHistory(1L)).isInstanceOf(AccessDeniedException.class);
+            verifyNoInteractions(requestHistoryService);
+        }
     }
 
 
