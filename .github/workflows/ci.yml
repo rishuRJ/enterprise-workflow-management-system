@@ -22,3 +22,10 @@ jobs:
 
       - name: Build and run tests
         run: mvn -B verify
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
