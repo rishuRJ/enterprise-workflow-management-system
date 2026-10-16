@@ -18,7 +18,11 @@ import org.testcontainers.kafka.KafkaContainer;
  * settings at the containers, so no URLs or passwords are needed.
  */
 @SpringBootTest
-@TestPropertySource(properties = "app.scheduling.enabled=false")
+@TestPropertySource(properties = {
+        "app.scheduling.enabled=false",
+        // Test-only signing key; the real one comes from the JWT_SECRET env var
+        "app.jwt.secret=test-only-jwt-secret-at-least-32-bytes-long"
+})
 public abstract class AbstractIntegrationTest {
 
     // Same images as docker-compose.yml
