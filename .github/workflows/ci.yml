@@ -6,8 +6,11 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+  workflow-service:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workflow
 
     steps:
       - name: Check out code
@@ -19,6 +22,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+          cache-dependency-path: workflow/pom.xml
 
       - name: Build and run tests
         run: mvn -B verify
@@ -28,4 +32,27 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: jacoco-report
-          path: target/site/jacoco/
+          path: workflow/target/site/jacoco/
+
+  notification-service:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: notification
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v5
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: notification/pom.xml
+
+      # Build only: the one existing test needs a live PostgreSQL.
+      # Testcontainers integration tests will replace it (roadmap week 1).
+      - name: Build
+        run: mvn -B package -DskipTests
