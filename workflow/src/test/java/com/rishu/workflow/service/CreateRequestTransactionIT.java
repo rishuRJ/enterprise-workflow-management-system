@@ -7,9 +7,7 @@ import static org.mockito.Mockito.doThrow;
 
 import java.time.LocalDateTime;
 
-import com.rishu.workflow.dto.RequestResponseDto;
-import com.rishu.workflow.enums.Action;
-import com.rishu.workflow.enums.RequestStatus;
+import com.rishu.workflow.enums.OutboxEventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import com.rishu.workflow.AbstractIntegrationTest;
 import com.rishu.workflow.dto.CreateRequestDto;
 import com.rishu.workflow.entity.User;
-import com.rishu.workflow.enums.OutboxEventStatus;
 import com.rishu.workflow.enums.Role;
 import com.rishu.workflow.repository.OutboxEventRepository;
 import com.rishu.workflow.repository.RequestHistoryRepository;
@@ -59,11 +56,7 @@ class CreateRequestTransactionIT extends AbstractIntegrationTest {
         assertThat(requestRepository.count()).isEqualTo(1);
         assertThat(requestHistoryRepository.count()).isEqualTo(1);
         assertThat(outboxEventRepository.count()).isEqualTo(1);
-        assertThat(outboxEventRepository.findAll().getFirst().getStatus()).isEqualTo(RequestStatus.PENDING);
-
-
-        // TODO 2: exactly one row in requests, request_history and outbox_event,
-        //         and the outbox event's status is PENDING
+        assertThat(outboxEventRepository.findAll().getFirst().getStatus()).isEqualTo(OutboxEventStatus.PENDING);
     }
 
     @Test
@@ -72,8 +65,11 @@ class CreateRequestTransactionIT extends AbstractIntegrationTest {
         doThrow(new IllegalStateException("simulated outbox failure"))
                 .when(outboxService).save(any());
 
-        // TODO 3: calling createRequest must throw IllegalStateException
-        // TODO 4: and afterwards, none of the three tables has any row
+        assertThatThrownBy(()->requestService.createRequest(new CreateRequestDto("New laptop", "Mine is broken", managerId)))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(requestRepository.count()).isEqualTo(0);
+        assertThat(requestHistoryRepository.count()).isEqualTo(0);
+        assertThat(outboxEventRepository.count()).isEqualTo(0);
     }
 
     private User user(String email, Role role) {
