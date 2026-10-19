@@ -52,7 +52,5 @@ jobs:
           cache: maven
           cache-dependency-path: notification/pom.xml
 
-      # Build only: the one existing test needs a live PostgreSQL.
-      # Testcontainers integration tests will replace it (roadmap week 1).
-      - name: Build
-        run: mvn -B package -DskipTests
+      - name: Build and run tests
+        run: mvn -B verify
