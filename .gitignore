@@ -1,37 +1,5 @@
-HELP.md
+# Each service has its own .gitignore; these apply to the whole repo
 .env
-target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-IMPLEMENTATION_PLAN.md
-mvnw.cmd
-Rishu_Raj_SHIELD_Resume.tex
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
+*.dump
+.idea/
+.claude/
